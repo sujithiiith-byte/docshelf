@@ -1,6 +1,6 @@
 # Privacy policy
 
-_Last updated: 13 November 2026_
+_Last updated: 14 November 2026_
 
 DocShelf is a document reader that runs entirely inside your browser.
 
@@ -12,7 +12,7 @@ DocShelf is a document reader that runs entirely inside your browser.
 
 You can remove a folder from the recent list at any time. Uninstalling the extension deletes all of this.
 
-**What it sends:** nothing. DocShelf makes no network requests. It has no analytics, no tracking, no ads, no accounts and no remote code. All its libraries are bundled inside the extension. The automated test suite checks that no network request is ever made.
+**What it sends:** nothing. DocShelf makes no network requests. It has no analytics, no tracking, no ads, no accounts and no remote code. All its libraries are bundled inside the extension. Its Content Security Policy tells the browser to block any request to the internet, so images that a document links from the web are not loaded (their description is shown instead). The automated test suite checks that no network request is ever made.
 
 **Permissions:**
 - `activeTab`: when you click the toolbar icon, DocShelf checks whether the current tab is an empty New Tab page so it can open there instead of adding another tab. It does not read or change any web page.

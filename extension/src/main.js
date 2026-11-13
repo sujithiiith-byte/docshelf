@@ -520,6 +520,28 @@ function applyTheme(theme) {
   els.btnTheme.title = `Theme: ${theme} (click to change)`;
 }
 
+// ---- Back / forward (Alt+Left/Right, mouse side buttons) -----------------------------
+
+function navigate(dir) {
+  const g = activeGroup;
+  const path = g?.step(dir);
+  if (!path) return;
+  g.navigating = true;
+  try {
+    workspace.open(path);
+  } finally {
+    g.navigating = false;
+  }
+}
+// Mouse buttons 3/4 would otherwise take the whole browser tab back.
+for (const type of ['mousedown', 'mouseup']) {
+  document.addEventListener(type, (e) => {
+    if (e.button !== 3 && e.button !== 4) return;
+    e.preventDefault();
+    if (type === 'mouseup' && state.root) navigate(e.button === 3 ? -1 : 1);
+  });
+}
+
 // ---- Keyboard ------------------------------------------------------------------------
 
 document.addEventListener('keydown', (e) => {
@@ -551,6 +573,9 @@ document.addEventListener('keydown', (e) => {
   } else if (e.altKey && !ctrl && (e.code === 'BracketRight' || e.code === 'BracketLeft')) {
     e.preventDefault();
     activeGroup.tabs.cycle(e.code === 'BracketRight' ? 1 : -1);
+  } else if (e.altKey && !ctrl && !e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    e.preventDefault(); // instead of leaving DocShelf through the browser's history
+    if (state.root) navigate(e.key === 'ArrowLeft' ? -1 : 1);
   } else if (ctrl && !e.altKey && e.code === 'Backslash') {
     e.preventDefault();
     const tab = activeGroup.tabs.active;

@@ -8,6 +8,8 @@ import hljs from '../../lib/highlight.min.js';
 import { h, dirname, basename, resolvePath, safeDecode, escapeHtml, store, toast, toggleButton } from '../util.js';
 import { typeOf } from '../fs/types.js';
 import { highlightText, scrollRangeIntoView } from './highlight.js';
+import { renderMermaid, isDarkTheme } from './mermaid.js';
+import { openLightbox } from '../ui/lightbox.js';
 
 const ID_PREFIX = 'sec-'; // keeps heading ids from clashing with page/DOM names
 
@@ -26,21 +28,82 @@ function slugify(text) {
   return n ? `${base}-${n}` : base;
 }
 
+// Footnotes ([^id] references and [^id]: definitions), numbered in the order
+// they are first referenced, listed at the end like GitHub does.
+let footnotes = new Map(); // lower-cased id -> { tokens, n, refs }
+let footnoteCount = 0;
+
+const ALERTS = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution' };
+
 const marked = new Marked({ gfm: true });
 marked.use({
   hooks: {
     preprocess(src) {
       slugCounts = new Map();
+      footnotes = new Map();
+      footnoteCount = 0;
       return src;
     },
+    postprocess(html) {
+      const used = [...footnotes.values()].filter((f) => f.n).sort((a, b) => a.n - b.n);
+      if (!used.length) return html;
+      const items = used.map((f) => {
+        const back = `<a href="#fnref-${f.n}" class="fn-back" aria-label="Back to reference ${f.n}">↩</a>`;
+        let body = marked.parser(f.tokens).trim();
+        body = /<\/p>$/.test(body) ? body.replace(/<\/p>$/, ` ${back}</p>`) : `${body} ${back}`;
+        return `<li id="fn-${f.n}">${body}</li>`;
+      });
+      return `${html}<section class="footnotes" aria-label="Footnotes"><ol>${items.join('')}</ol></section>`;
+    },
   },
+  extensions: [
+    {
+      name: 'footnoteDef',
+      level: 'block',
+      start: (src) => src.match(/^\[\^[^\]\s]+\]:/m)?.index,
+      tokenizer(src) {
+        // First line plus any following lines indented by 2+ spaces or a tab.
+        const m = /^\[\^([^\]\s]+)\]:[ \t]*([^\n]*(?:\n(?: {2,}|\t)[^\n]*)*)(?:\n|$)/.exec(src);
+        if (!m) return undefined;
+        const text = m[2].replace(/\n(?: {2,4}|\t)/g, '\n');
+        const key = m[1].toLowerCase();
+        const token = { type: 'footnoteDef', raw: m[0], tokens: this.lexer.blockTokens(text, []) };
+        if (!footnotes.has(key)) footnotes.set(key, { tokens: token.tokens, n: 0, refs: 0 });
+        return token;
+      },
+      renderer: () => '',
+    },
+    {
+      name: 'footnoteRef',
+      level: 'inline',
+      start: (src) => { const i = src.indexOf('[^'); return i < 0 ? undefined : i; },
+      tokenizer(src) {
+        const m = /^\[\^([^\]\s]+)\]/.exec(src);
+        const f = m && footnotes.get(m[1].toLowerCase());
+        if (!f) return undefined;
+        f.n ||= ++footnoteCount;
+        f.refs++;
+        return { type: 'footnoteRef', raw: m[0], n: f.n, ref: f.refs };
+      },
+      renderer: ({ n, ref }) => `<sup class="fn-ref"><a href="#fn-${n}" id="fnref-${n}${ref > 1 ? `-${ref}` : ''}">${n}</a></sup>`,
+    },
+  ],
   renderer: {
+    // GitHub alerts: > [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION]
+    blockquote({ tokens }) {
+      const m = tokens[0]?.type === 'paragraph' && /^\[!(\w+)\][ \t]*(?:\n|$)/.exec(tokens[0].raw);
+      const kind = m && m[1].toLowerCase();
+      if (!kind || !ALERTS[kind]) return false;
+      const body = this.parser.parse(tokens).replace(/^<p>\[!\w+\][ \t]*\n?/, '<p>').replace(/^<p><\/p>\n?/, '');
+      return `<div class="md-alert md-alert-${kind}"><p class="md-alert-title">${ALERTS[kind]}</p>${body}</div>\n`;
+    },
     heading({ tokens, depth, text }) {
       const id = ID_PREFIX + slugify(text);
       return `<h${depth} id="${escapeHtml(id)}">${this.parser.parseInline(tokens)}</h${depth}>\n`;
     },
     code({ text, lang }) {
       const language = (lang || '').trim().split(/\s+/)[0].toLowerCase();
+      if (language === 'mermaid') return `<pre class="mermaid-src"><code>${escapeHtml(text)}</code></pre>\n`;
       let body = escapeHtml(text);
       if (language && hljs.getLanguage(language)) {
         try { body = hljs.highlight(text, { language, ignoreIllegals: true }).value; } catch { /* plain */ }
@@ -62,6 +125,14 @@ const isExternal = (url) => /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(url);
 const root = document.documentElement;
 root.classList.toggle('md-no-outline', !store.get('md.outline', true));
 
+// Diagrams are drawn for the current theme; redraw them when it changes.
+const themeListeners = new Set();
+const onThemeChange = () => themeListeners.forEach((fn) => fn());
+new MutationObserver(onThemeChange).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', onThemeChange);
+
+const firstLine = (err) => String(err?.message ?? err).split('\n').find((l) => l.trim())?.trim() ?? 'unknown error';
+
 // ---- Viewer -----------------------------------------------------------------
 
 function create(el, ctx) {
@@ -77,6 +148,8 @@ function create(el, ctx) {
   let renderSeq = 0;
   let disposed = false;
   let raf = 0;
+  let diagrams = []; // { block, pre, code }
+  let diagramsDark = null;
 
   const toolbar = h(
     'div',
@@ -138,6 +211,23 @@ function create(el, ctx) {
   }
   article.addEventListener('click', onLink);
   article.addEventListener('auxclick', onLink);
+
+  // Click a diagram or a picture to see it full-window.
+  article.addEventListener('click', (e) => {
+    const diagram = e.target.closest('.mermaid-diagram');
+    if (diagram) {
+      const svg = diagram.querySelector('svg');
+      if (svg) openLightbox(svg.cloneNode(true), { title: 'Diagram' });
+      return;
+    }
+    const img = e.target.closest('img');
+    if (!img || img.closest('a') || !img.currentSrc || img.classList.contains('broken') || !img.naturalWidth) return;
+    openLightbox(h('img', { src: img.currentSrc, alt: img.alt }), {
+      title: img.alt || basename(img.dataset.localSrc ?? img.currentSrc),
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+    });
+  });
 
   // Code blocks get a copy button.
   article.addEventListener('click', (e) => {
@@ -215,6 +305,30 @@ function create(el, ctx) {
     }));
   }
 
+  async function renderDiagrams(seq) {
+    if (!diagrams.length) return;
+    const dark = isDarkTheme();
+    diagramsDark = dark;
+    for (const d of diagrams) {
+      try {
+        const svg = await renderMermaid(d.code);
+        if (seq !== renderSeq || disposed || diagramsDark !== dark) return;
+        d.block.classList.remove('mmd-error');
+        d.block.classList.toggle('mmd-dark', dark);
+        d.block.replaceChildren(h('div', { class: 'mermaid-diagram', title: 'Click to enlarge' }, svg));
+      } catch (err) {
+        if (seq !== renderSeq || disposed || diagramsDark !== dark) return;
+        d.block.classList.add('mmd-error');
+        d.block.replaceChildren(d.pre, h('div', { class: 'mmd-msg', text: `This diagram couldn't be drawn: ${firstLine(err)}` }));
+      }
+    }
+  }
+
+  const onTheme = () => {
+    if (diagrams.length && isDarkTheme() !== diagramsDark) renderDiagrams(renderSeq);
+  };
+  themeListeners.add(onTheme);
+
   async function load(file) {
     const seq = ++renderSeq;
     let text = await file.text();
@@ -231,11 +345,23 @@ function create(el, ctx) {
     tpl.innerHTML = html;
     for (const img of tpl.content.querySelectorAll('img[src]')) {
       const src = img.getAttribute('src');
-      if (!isExternal(src)) {
+      img.removeAttribute('srcset');
+      if (/^(?:https?:)?\/\//i.test(src)) {
+        // DocShelf never goes online, so web images become a quiet label.
+        let host = '';
+        try { host = new URL(src, 'https://x/').host; } catch { /* keep empty */ }
+        img.replaceWith(h('span', { class: 'remote-img', title: `Image from ${host || 'the web'}: not loaded, DocShelf works offline`, text: img.alt || 'Web image' }));
+      } else if (!isExternal(src)) {
         img.removeAttribute('src');
         img.dataset.localSrc = src;
       }
     }
+    diagrams = [...tpl.content.querySelectorAll('pre.mermaid-src')].map((pre) => {
+      const block = h('div', { class: 'mermaid-block' });
+      pre.replaceWith(block);
+      block.append(pre);
+      return { block, pre, code: pre.textContent };
+    });
     for (const pre of tpl.content.querySelectorAll('pre')) {
       pre.append(h('button', { class: 'copy-btn', type: 'button', text: 'Copy' }));
     }
@@ -247,7 +373,7 @@ function create(el, ctx) {
     }
     article.append(tpl.content);
     buildOutline();
-    await loadLocalImages(seq);
+    await Promise.all([loadLocalImages(seq), renderDiagrams(seq)]);
   }
 
   // Highlight search matches and scroll to occurrence `index`.
@@ -269,6 +395,7 @@ function create(el, ctx) {
     },
     destroy() {
       disposed = true;
+      themeListeners.delete(onTheme);
       cancelAnimationFrame(raf);
       el.removeEventListener('scroll', onScroll);
       revokeUrls();

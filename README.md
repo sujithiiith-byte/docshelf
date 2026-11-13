@@ -1,6 +1,6 @@
 # DocShelf
 
-A calm, offline reader for your **design docs**: Markdown, PDF and plain text, in VS Code-style tabs. It's a Chrome extension. Code files stay out of the way, nothing leaves your computer, and it weighs under 500 KB.
+A calm, offline reader for your **design docs**: Markdown, PDF and plain text, in VS Code-style tabs. It's a Chrome extension. Code files stay out of the way and nothing leaves your computer.
 
 ![DocShelf showing a Markdown design doc](docs/screenshots/1-setup.png)
 
@@ -10,8 +10,8 @@ Editors like VS Code or code-server show every `.py` and `.c` file, and you have
 
 - **One click shows a rendered document.** Double-click keeps it open in a tab.
 - **Only documents are listed.** Folders without `.md`, `.pdf` or `.txt` files are hidden.
-- **Private:** no network access, no analytics, no accounts. The test suite checks for zero network requests.
-- **Light:** no framework and no build step. Libraries load only when a document needs them, and at most 4 documents stay rendered at a time.
+- **Private:** no network access, no analytics, no accounts. The browser itself is told to block any internet request, and the test suite checks for zero network requests.
+- **Light:** no framework and no build step. Libraries load only when a document needs them (the diagram library only for documents with diagrams), and at most 4 documents stay rendered at a time.
 
 ## Install (about 1 minute)
 
@@ -40,11 +40,15 @@ Works in Chrome, Edge and other Chromium browsers (116+). In Brave, first enable
 | Ctrl+P | Go to a document by name |
 | Ctrl+Shift+F | Search inside all Markdown and text files |
 | Alt+W · Alt+[ · Alt+] | Close tab · previous · next |
+| Alt+← · Alt+→ | Back · forward, after following links (mouse side buttons work too) |
 | Right-click | Tab actions (close others, copy path…) and file actions |
 | Ctrl+\\ · Alt+click a file | Open to the side (split view) |
 | / · Ctrl+B · Ctrl+O | Filter by name · hide/show explorer (also the top-left button) · open another folder |
 
 **Markdown:** tables, task lists, highlighted code with Copy buttons, an "On this page" outline, front matter, images from your folder, and links between docs (`api.md#endpoints` opens in a tab). The **Source** button shows the raw text and **Print** saves as PDF.
+**Diagrams:** ```` ```mermaid ```` blocks (flowcharts, sequence, class, state, ER, Gantt…) are drawn as pictures, in light or dark. Click a diagram or image to see it full-window, then scroll to zoom and drag to move.
+**GitHub extras:** `> [!NOTE]` / `[!TIP]` / `[!IMPORTANT]` / `[!WARNING]` / `[!CAUTION]` alerts and `[^1]` footnotes.
+**Web images** (`https://…`) are not loaded, so reading a doc never contacts anyone. Their alt text is shown instead.
 **PDF:** Chrome's built-in viewer (pages, zoom, search, print). **Text:** monospace or a readable **Prose** font.
 **Live reload:** the open document refreshes when the file changes on disk, handy while you or an AI edit it.
 
@@ -59,16 +63,16 @@ extension/               the extension (load this folder)
   manifest.json          MV3; only permission: activeTab
   background.js          icon click → new workspace tab (reuses an empty New Tab)
   workspace.html, css/
-  lib/                   bundled marked, DOMPurify, highlight.js
+  lib/                   bundled marked, DOMPurify, highlight.js, mermaid (see lib/README.md)
   src/
     main.js              wiring; folder id lives in the tab URL (?f=…)
     fs/                  types.js (which files count), scanner.js, folderAccess.js
     state/               tabs.js (preview/pinned rules), filters.js
     search/              searchEngine.js (full-text, cached by modification time)
-    ui/                  explorer, editorGroup (split view), tabbar, viewerHost, searchPanel, quickOpen, contextMenu, welcome
-    viewers/             registry.js (lazy loading), markdown.js, pdf.js, text.js, highlight.js
+    ui/                  explorer, editorGroup (split view, back/forward), tabbar, viewerHost, searchPanel, quickOpen, contextMenu, lightbox, welcome
+    viewers/             registry.js (lazy loading), markdown.js, mermaid.js, pdf.js, text.js, highlight.js
 tools/
-  e2e/run.py             headless end-to-end tests (84 checks)
+  e2e/run.py             headless end-to-end tests (104 checks)
   package.sh             builds the release zip (also done by the release workflow)
   make-icons.mjs         regenerates the icons
 docs/screenshots/        README screenshots (regenerate: tools/e2e/run.py --store)
@@ -81,7 +85,7 @@ docs/screenshots/        README screenshots (regenerate: tools/e2e/run.py --stor
 
 - PDF text is not included in Ctrl+Shift+F search.
 - In the PDF viewer's title bar, and when downloading from it, the file shows up as a random ID instead of its name, because it is loaded from a local blob URL.
-- Mermaid diagrams show as code blocks.
+- The download is about 1.7 MB, mostly the diagram library. It only loads when a document has a diagram.
 
 ## Contributing
 

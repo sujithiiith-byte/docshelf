@@ -17,5 +17,8 @@
       "description": "Open DocShelf"
     }
   },
-  "permissions": ["activeTab"]
+  "permissions": ["activeTab"],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; frame-src 'self' blob:; connect-src 'self' blob: data:; base-uri 'none'; form-action 'none'"
+  }
 }

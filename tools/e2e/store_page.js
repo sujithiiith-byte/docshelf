@@ -50,7 +50,11 @@
 
 This document describes how **Acme Docs** serves design documents to the web client, and the trade-offs behind the current design. See [ADR-001](decisions/ADR-001-storage.md) for the storage decision.
 
-![System diagram](../assets/system.svg)
+\`\`\`mermaid
+flowchart LR
+  client[Web client] -- HTTPS --> gw[API gateway] -- gRPC --> svc[Doc service]
+  svc --> cache[(Cache)]
+\`\`\`
 
 ## Components
 
@@ -82,6 +86,7 @@ export async function getDoc(id: string): Promise<Doc> {
 - [x] Invalidation on publish
 - [ ] Warm cache for the 100 most-read docs
 
+> [!NOTE]
 > Cache misses are rare after warm-up; see the dashboard notes in \`notes/\`.
 
 ## Open questions
@@ -102,6 +107,11 @@ Design documents are written by engineers in their editors and reviewed in pull 
 ## Decision
 
 Keep every document as a plain **Markdown file in the repository**, next to the code it describes. Rendering happens in the client.
+
+\`\`\`mermaid
+flowchart LR
+  editor[Any editor] --> pr[Pull request] --> repo[(Repository)] --> client[Web client]
+\`\`\`
 
 ## Consequences
 
@@ -152,7 +162,7 @@ docs:
       ws.explorer.reveal('api/endpoints.md');
       for (const p of ['architecture/decisions/ADR-001-storage.md', 'api/endpoints.md', 'notes/2026-11-02-sync.txt']) ws.tabs.open(p, { pin: true });
       ws.tabs.open('architecture/overview.md');
-      await waitFor(() => view()?.querySelector('img[src^="blob:"]'));
+      await waitFor(() => view()?.querySelector('.mermaid-diagram svg'), 15000);
       await sleep(400);
       return true;
     },
@@ -172,7 +182,8 @@ docs:
       document.documentElement.dataset.theme = 'dark';
       const tab = $$('.tab').find((t) => t.textContent.includes('ADR-001'));
       tab.click();
-      await sleep(400);
+      await waitFor(() => view()?.querySelector('.mermaid-block.mmd-dark svg'), 8000);
+      await sleep(300);
       return true;
     },
     async quickOpen() {

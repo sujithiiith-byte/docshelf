@@ -254,6 +254,9 @@ def run(cdp):
     results += stage(s1, "splitStage")
     shot(s1, "13-split.png")
     results += stage(s1, "splitClose")
+    results += stage(s1, "richStage")
+    shot(s1, "14-diagrams.png")
+    results += stage(s1, "navStage")
 
     size(s1, 760, 800)
     time.sleep(0.4)

@@ -16,6 +16,7 @@ const MORE_SHORTCUTS = [
   ['Right-click', 'Tab and file actions'],
   ['Ctrl+\\ / Alt+click', 'Open to the side (split view)'],
   ['Alt+[ / Alt+]', 'Previous / next tab'],
+  ['Alt+← / Alt+→', 'Back / forward (also the mouse side buttons)'],
   ['Alt+P', 'Keep the preview tab open'],
   ['/', 'Filter files by name'],
   ['Ctrl+B', 'Hide / show the sidebar'],

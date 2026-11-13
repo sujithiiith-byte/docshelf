@@ -24,6 +24,7 @@ const POLL_MS = 1500;
 
 export class ViewerHost {
   #views = new Map(); // tabId -> view record
+  #recentStates = new Map(); // path -> view state of recently closed documents (for Back)
   #activeId = null;
   #noteTimer;
 
@@ -57,8 +58,10 @@ export class ViewerHost {
   sync(tabs, active) {
     const ids = new Set(tabs.map((t) => t.id));
     for (const [id, v] of this.#views) {
-      if (!ids.has(id)) this.#destroy(v);
-      else v.tab = tabs.find((t) => t.id === id);
+      if (!ids.has(id)) {
+        this.#rememberState(v);
+        this.#destroy(v);
+      } else v.tab = tabs.find((t) => t.id === id);
     }
 
     const nextId = active?.id ?? null;
@@ -121,7 +124,8 @@ export class ViewerHost {
       await inst.load(file);
       if (v.destroyed) { inst.destroy(); return; }
       Object.assign(v, { inst, handle, mtime: file.lastModified, size: file.size, missing: false });
-      if (v.state) inst.setViewState(v.state);
+      const state = v.state ?? this.#recentStates.get(tab.path);
+      if (state) inst.setViewState(state);
       if (v.fragment) { inst.reveal?.(v.fragment); v.fragment = null; }
       if (v.pendingFind) { inst.find?.(v.pendingFind.query, v.pendingFind.index); v.pendingFind = null; }
       if (tab.id === this.#activeId) this.#renderBar(v);
@@ -141,6 +145,15 @@ export class ViewerHost {
       h('div', { text: notFound ? 'It may have been moved, renamed or deleted.' : String(err?.message ?? err) }),
       h('button', { class: 'btn', text: 'Try again', onclick: () => { if (!v.mounting) v.mounting = this.#mount(v); } }),
     );
+  }
+
+  /** Keep a closed document's position, so going Back (or reopening it) returns there. */
+  #rememberState(v) {
+    const state = v.inst ? v.inst.getViewState?.() : v.state;
+    if (!state) return;
+    this.#recentStates.delete(v.tab.path);
+    this.#recentStates.set(v.tab.path, state);
+    if (this.#recentStates.size > 40) this.#recentStates.delete(this.#recentStates.keys().next().value);
   }
 
   #saveState(v) {

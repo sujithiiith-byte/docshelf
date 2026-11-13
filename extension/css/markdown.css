@@ -139,3 +139,40 @@
 .hljs-deletion { color: var(--hl-keyword); }
 .hljs-section, .hljs-strong { font-weight: 650; }
 .hljs-emphasis { font-style: italic; }
+
+/* GitHub-style alerts: > [!NOTE] etc. */
+.md-alert { margin: 0 0 1em; padding: 6px 16px; border-left: 4px solid var(--alert); }
+.md-alert > :last-child { margin-bottom: 0.5em; }
+.md-alert-title { margin: 0.4em 0 0.3em !important; color: var(--alert); font-weight: 650; }
+.md-alert-note { --alert: var(--accent); }
+.md-alert-tip { --alert: var(--hl-tag); }
+.md-alert-important { --alert: var(--hl-title); }
+.md-alert-warning { --alert: var(--hl-builtin); }
+.md-alert-caution { --alert: var(--hl-keyword); }
+
+/* Footnotes */
+.markdown-body .fn-ref { font-size: 0.75em; line-height: 0; }
+.markdown-body .fn-ref a::before { content: "["; }
+.markdown-body .fn-ref a::after { content: "]"; }
+.markdown-body .footnotes { margin-top: 2.5em; padding-top: 1em; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.88em; }
+.markdown-body .footnotes p { margin: 0 0 0.4em; }
+.markdown-body .fn-back { margin-left: 0.2em; }
+
+/* Mermaid diagrams */
+.mermaid-block { margin: 0 0 1em; }
+.mermaid-block:not(.mmd-error) > .mermaid-src { opacity: 0.55; } /* source shown while drawing */
+.mermaid-diagram { display: flex; justify-content: center; padding: 8px 0; overflow-x: auto; cursor: zoom-in; }
+.mermaid-diagram svg { max-width: 100%; height: auto; }
+.mmd-msg { margin-top: -0.6em; color: var(--t-pdf); font-size: 13px; }
+.markdown-body img:not(.broken) { cursor: zoom-in; }
+.markdown-body a img { cursor: pointer; }
+
+/* Web images are not loaded (offline); their alt text stands in. */
+.remote-img {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--fg-faint);
+  font-size: 0.8em;
+}

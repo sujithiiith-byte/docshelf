@@ -459,6 +459,84 @@ End.
       return { results };
     },
 
+    async richStage() {
+      const { results, check } = suite();
+      const FLOWS = [
+        '# Flows', '',
+        '> [!NOTE]', '> Read the [architecture](arch.md) first.', '',
+        '> [!WARNING]', '> Second alert.', '',
+        '> Plain quote.', '',
+        'A claim that needs a source[^1] and another[^note].', '',
+        '![diagram](../../img/diagram.svg) ![build status](https://example.com/badge.svg)', '',
+        '```mermaid', 'flowchart LR', '  A["Client <img src=x onerror=window.__mxss=1>"] --> B[Gateway] --> C[Doc service]', '```', '',
+        '```mermaid', 'sequenceDiagram', '  Alice->>Bob: Hello', '  Bob-->>Alice: Hi', '```', '',
+        '```mermaid', 'flowchart LR', '  A --> ', '```', '',
+        '[^1]: First footnote.', '[^note]: Second **footnote**.', '',
+      ].join('\n');
+      const design = await (await (await projectDir()).getDirectoryHandle('docs')).getDirectoryHandle('design');
+      const w = await (await design.getFileHandle('flows.md', { create: true })).createWritable();
+      await w.write(FLOWS);
+      await w.close();
+      window.docshelf.tabs.open('docs/design/flows.md', { pin: true });
+      const a = await waitFor(() => activeView()?.querySelector('.markdown-body .md-alert'));
+      const alerts = $$('.view:not([hidden]) .md-alert');
+      check('GitHub alerts render with titles', alerts.length === 2 && alerts[0].querySelector('.md-alert-title').textContent === 'Note' && alerts[1].classList.contains('md-alert-warning'), alerts.length);
+      check('alert marker text is removed', a && !a.textContent.includes('[!NOTE]') && a.querySelector('a[href="arch.md"]'), a?.textContent);
+      check('web images are not loaded (offline label instead)', activeView().querySelector('.remote-img')?.textContent === 'build status' && !$$('img').some((i) => /example\.com/.test(i.src)));
+      check('plain blockquotes are unchanged', activeView().querySelectorAll('.markdown-body > blockquote').length === 1);
+      const refs = $$('.view:not([hidden]) .fn-ref a').map((x) => x.textContent).join(',');
+      const notes = $$('.view:not([hidden]) .footnotes li');
+      check('footnotes are numbered and listed at the end', refs === '1,2' && notes.length === 2 && notes[1].querySelector('strong') && notes[0].querySelector('a.fn-back[href="#fnref-1"]'), `${refs} / ${notes.length}`);
+
+      const drawn = await waitFor(() => activeView().querySelectorAll('.mermaid-diagram svg').length === 2 && activeView().querySelector('.mmd-error'), 20000);
+      check('mermaid diagrams render as SVG', drawn && activeView().querySelector('.mermaid-diagram svg').textContent.includes('Gateway'), activeView().querySelectorAll('.mermaid-block').length);
+      check('a broken diagram shows its source and an error', activeView().querySelector('.mmd-error pre.mermaid-src') && activeView().querySelector('.mmd-error .mmd-msg')?.textContent.startsWith("This diagram couldn't"));
+      check('diagram labels cannot run scripts', !window.__mxss && !activeView().querySelector('.mermaid-diagram [onerror]'));
+      check('no mermaid scratch elements left behind', !$$('body > *').some((e) => /docshelf-mmd/.test(e.id)), $$('body > *').map((e) => e.id).join(','));
+
+      document.documentElement.dataset.theme = 'dark';
+      check('diagrams redraw for the dark theme', await waitFor(() => activeView().querySelector('.mermaid-block.mmd-dark .mermaid-diagram svg'), 8000));
+      delete document.documentElement.dataset.theme;
+      check('and back for light', await waitFor(() => !activeView().querySelector('.mermaid-block.mmd-dark') && activeView().querySelector('.mermaid-diagram svg'), 8000));
+
+      click(activeView().querySelector('.mermaid-diagram'));
+      check('clicking a diagram opens it full-window', $('.lightbox svg') && $('.lb-zoom').textContent.endsWith('%'));
+      key('Escape', { key: 'Escape' });
+      check('Esc closes the full-window view', !$('.lightbox'));
+      const img = await waitFor(() => activeView().querySelector('.markdown-body img[src^="blob:"]'));
+      await img?.decode().catch(() => {});
+      click(img);
+      check('clicking a picture opens it full-window', $('.lightbox img') && $('.lb-title').textContent === 'diagram', $('.lb-title')?.textContent);
+      key('Escape', { key: 'Escape' });
+      return { results };
+    },
+
+    async navStage() {
+      const { results, check } = suite();
+      for (const t of [...window.docshelf.tabs.tabs]) window.docshelf.tabs.close(t.id);
+      window.docshelf.explorer.reveal('docs/design/arch.md');
+      click(row('docs/design/arch.md'));
+      await waitFor(() => activeView()?.querySelector('.markdown-body h1'));
+      activeView().scrollTop = 1500;
+      await sleep(50);
+      click(activeView().querySelector('a[href="api.md#endpoints"]'));
+      await waitFor(() => tabs().find((t) => t.active)?.name === 'api.md' && activeView()?.querySelector('.markdown-body h1'));
+      check('following a link replaces the preview', tabs().length === 1 && tabs()[0].name === 'api.md', JSON.stringify(tabs()));
+      key('ArrowLeft', { key: 'ArrowLeft', altKey: true });
+      await waitFor(() => tabs().find((t) => t.active)?.name === 'arch.md' && activeView()?.querySelector('.markdown-body h1'));
+      await sleep(100);
+      check('Alt+Left goes back to the previous document', tabs().find((t) => t.active)?.name === 'arch.md', JSON.stringify(tabs()));
+      check('...at the same scroll position', Math.abs(activeView().scrollTop - 1500) < 5, activeView().scrollTop);
+      key('ArrowRight', { key: 'ArrowRight', altKey: true });
+      await waitFor(() => tabs().find((t) => t.active)?.name === 'api.md');
+      check('Alt+Right goes forward again', tabs().find((t) => t.active)?.name === 'api.md', JSON.stringify(tabs()));
+      mouse($('.views'), 'mouseup', { button: 3 });
+      await waitFor(() => tabs().find((t) => t.active)?.name === 'arch.md');
+      check('the mouse back button goes back too', tabs().find((t) => t.active)?.name === 'arch.md', JSON.stringify(tabs()));
+      check('...without leaving DocShelf', location.pathname.endsWith('/workspace.html'));
+      return { results };
+    },
+
     async beforeReload() {
       const { results } = suite();
       window.__tabsBefore = JSON.stringify(tabs().map((t) => t.name));
