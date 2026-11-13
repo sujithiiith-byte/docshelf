@@ -269,7 +269,13 @@ def run(cdp):
         elif m == "Runtime.consoleAPICalled" and p.get("type") in ("error", "warning"):
             problems.append("console: " + " ".join(str(a.get("value", a.get("description"))) for a in p["args"])[:300])
         elif m == "Log.entryAdded" and p["entry"]["level"] in ("error", "warning"):
-            problems.append("log: " + p["entry"]["text"][:300] + " " + p["entry"].get("url", ""))
+            text, src = p["entry"]["text"], p["entry"].get("url", "")
+            # The test docs deliberately contain <img onerror=...>. Newer Chrome
+            # logs that the extension's CSP blocked it while the sanitizer
+            # parsed it: that's the defence working, not an error.
+            if "inline event handler" in text and src.endswith("/lib/purify.es.mjs"):
+                continue
+            problems.append("log: " + text[:300] + " " + src)
     ok = not problems
     print(("PASS  " if ok else "FAIL  ") + "no console errors" + ("" if ok else "\n   " + "\n   ".join(problems)))
     results.append({"name": "console", "ok": ok})
