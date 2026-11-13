@@ -1,0 +1,28 @@
+name: release
+
+# Push a tag like v0.3.0 to publish a GitHub Release with the installable zip.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check tag matches manifest version
+        run: |
+          version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' extension/manifest.json)
+          test "v$version" = "$GITHUB_REF_NAME" || { echo "Tag $GITHUB_REF_NAME != manifest v$version"; exit 1; }
+      - name: Build zip
+        run: sh tools/package.sh
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --title "DocShelf $GITHUB_REF_NAME" \
+            --notes "Download docshelf-*.zip below, unzip it, then load the folder in chrome://extensions → Developer mode → Load unpacked. See the README for details and CHANGELOG.md for what's new."

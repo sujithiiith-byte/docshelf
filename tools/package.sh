@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds dist/docshelf-<version>.zip for the Chrome Web Store.
+# Builds dist/docshelf-<version>.zip, the installable release.
 set -eu
 cd "$(dirname "$0")/.."
 version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' extension/manifest.json)

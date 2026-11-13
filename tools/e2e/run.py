@@ -3,7 +3,7 @@
 Talks to Chromium over the DevTools protocol on a localhost port (stdlib only). Uses the Origin
 Private File System as a stand-in for a picked folder (same handle API).
 Usage: python3 tools/e2e/run.py [screenshot-dir]      run the tests
-       python3 tools/e2e/run.py --store            regenerate store/screenshots
+       python3 tools/e2e/run.py --store            regenerate docs/screenshots
 Env:   CHROME=/path/to/chromium   (default: /snap/bin/chromium)
        E2E_PROFILE=/path/to/profile (default: ~/snap/chromium/common/docshelf-e2e)
        E2E_EXTRA_ARGS="--no-sandbox"  extra browser flags (e.g. for CI)
@@ -192,8 +192,8 @@ def run(cdp):
     results = []
 
     if "--store" in sys.argv:
-        # Chrome Web Store screenshots (1280x800) with realistic sample docs.
-        out_dir = Path(__file__).resolve().parents[2] / "store" / "screenshots"
+        # README screenshots (1280x800) with realistic sample docs.
+        out_dir = Path(__file__).resolve().parents[2] / "docs" / "screenshots"
         out_dir.mkdir(parents=True, exist_ok=True)
         _, s = open_page(url)
         size(s, 1280, 800)

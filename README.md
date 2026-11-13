@@ -2,7 +2,7 @@
 
 A calm, offline reader for your **design docs**: Markdown, PDF and plain text, in VS Code-style tabs. It's a Chrome extension. Code files stay out of the way, nothing leaves your computer, and it weighs under 500 KB.
 
-![DocShelf showing a Markdown design doc](store/screenshots/1-setup.png)
+![DocShelf showing a Markdown design doc](docs/screenshots/1-setup.png)
 
 ## Why
 
@@ -13,14 +13,18 @@ Editors like VS Code or code-server show every `.py` and `.c` file, and you have
 - **Private:** no network access, no analytics, no accounts. The test suite checks for zero network requests.
 - **Light:** no framework and no build step. Libraries load only when a document needs them, and at most 4 documents stay rendered at a time.
 
-## Install
+## Install (about 1 minute)
 
-**From the Chrome Web Store:** _coming soon._
+DocShelf is free and installed straight from this repository. It's not on the Chrome Web Store.
 
-**From source (30 seconds):**
-1. Download or clone this repository.
-2. Open `chrome://extensions` and turn on **Developer mode**.
-3. Click **Load unpacked** and select the `extension/` folder. Pin the icon.
+1. **Download** the latest `docshelf-<version>.zip` from the [Releases page](../../releases) and unzip it somewhere permanent, e.g. `Documents/docshelf`. Or use **Code → Download ZIP**, or `git clone` this repo, and use its `extension/` folder.
+2. Open `chrome://extensions` (or `edge://extensions`) and turn on **Developer mode** (top right).
+3. Click **Load unpacked** and select the unzipped folder: the one that contains `manifest.json`.
+4. Pin the DocShelf icon from the puzzle-piece menu.
+
+**Updating:** download the new zip and unzip it over the old folder (or `git pull`). Then click the reload icon on the DocShelf card in `chrome://extensions`. Your recent folders and settings are kept.
+
+**Good to know:** keep the folder where you put it, because Chrome loads the extension from there. Developer mode only lets you load extensions from your own disk; it doesn't change how Chrome treats websites.
 
 Works in Chrome, Edge and other Chromium browsers (116+). In Brave, first enable `brave://flags/#file-system-access-api`.
 
@@ -63,10 +67,10 @@ extension/               the extension (load this folder)
     ui/                  explorer, tabbar, viewerHost, searchPanel, quickOpen, contextMenu, welcome
     viewers/             registry.js (lazy loading), markdown.js, pdf.js, text.js, highlight.js
 tools/
-  e2e/run.py             headless end-to-end tests (73 checks), --store for screenshots
-  package.sh             builds dist/docshelf-<version>.zip
+  e2e/run.py             headless end-to-end tests (73 checks)
+  package.sh             builds the release zip (also done by the release workflow)
   make-icons.mjs         regenerates the icons
-store/                   Chrome Web Store listing text and screenshots
+docs/screenshots/        README screenshots (regenerate: tools/e2e/run.py --store)
 ```
 
 **Adding a file type:** add it to `src/fs/types.js` and add a viewer in `src/viewers/registry.js`.

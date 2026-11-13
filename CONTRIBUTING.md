@@ -24,5 +24,5 @@ The tests use the browser's private file system (OPFS) as a stand-in folder, so 
 ## Release
 
 1. Bump `version` in `extension/manifest.json` and add a `CHANGELOG.md` entry.
-2. `sh tools/package.sh` → `dist/docshelf-<version>.zip`.
-3. Upload the zip in the Chrome Web Store developer dashboard.
+2. Commit, then tag and push: `git tag v0.3.0 && git push --tags`.
+3. The release workflow builds `docshelf-<version>.zip` and attaches it to a GitHub Release. To build it locally instead, run `sh tools/package.sh` → `dist/`.

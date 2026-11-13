@@ -1,4 +1,4 @@
-// Builds a realistic sample folder and stages the UI for Chrome Web Store
+// Builds a realistic sample folder and stages the UI for README
 // screenshots (1280x800). Used by: python3 tools/e2e/run.py --store
 (() => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
