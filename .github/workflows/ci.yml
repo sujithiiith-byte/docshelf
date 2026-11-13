@@ -1,0 +1,31 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Chrome for Testing
+        id: chrome
+        run: |
+          path=$(npx -y @puppeteer/browsers@2.6.1 install chrome@stable --path "$RUNNER_TEMP/browsers" | tail -1 | cut -d' ' -f2-)
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+      - name: End-to-end tests
+        env:
+          CHROME: ${{ steps.chrome.outputs.path }}
+          E2E_PROFILE: ${{ runner.temp }}/docshelf-profile
+          E2E_EXTRA_ARGS: --no-sandbox
+        run: python3 tools/e2e/run.py
+      - name: Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: tools/e2e/shots/

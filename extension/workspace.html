@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DocShelf</title>
+  <link rel="icon" href="icons/icon32.png">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/markdown.css">
+</head>
+<body>
+  <div id="app" class="app no-root">
+    <aside class="sidebar" aria-label="Explorer">
+      <header class="side-head">
+        <div class="root-name" id="rootName">No folder open</div>
+        <div class="side-actions">
+          <button class="icon-btn" id="btnSearch" title="Search in documents (Ctrl+Shift+F)" aria-label="Search in documents" aria-pressed="false"></button>
+          <button class="icon-btn" id="btnOpen" title="Open folder… (Ctrl+O)" aria-label="Open folder"></button>
+          <button class="icon-btn" id="btnRefresh" title="Rescan folder" aria-label="Rescan folder"></button>
+          <button class="icon-btn" id="btnCollapse" title="Collapse all folders" aria-label="Collapse all folders"></button>
+        </div>
+      </header>
+      <div class="filters" id="filters" role="group" aria-label="File types"></div>
+      <div class="search">
+        <input id="search" type="search" placeholder="Filter by name   /" spellcheck="false" autocomplete="off" aria-label="Filter files by name">
+      </div>
+      <div class="tree" id="tree" role="tree" tabindex="0" aria-label="Documents"></div>
+      <div class="search-panel" id="searchPanel"></div>
+      <footer class="side-foot">
+        <span class="status" id="status"></span>
+        <button class="icon-btn" id="btnTheme" aria-label="Change theme"></button>
+      </footer>
+    </aside>
+    <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" title="Drag to resize · double-click to reset · Ctrl+B to hide"></div>
+    <main class="main">
+      <div class="tabbar" id="tabbar" role="tablist" aria-label="Open documents"></div>
+      <div class="pathbar" id="pathbar"></div>
+      <div class="views" id="views"></div>
+      <div class="welcome" id="welcome"></div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
