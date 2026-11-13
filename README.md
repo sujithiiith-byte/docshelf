@@ -87,3 +87,7 @@ docs/screenshots/        README screenshots (regenerate: tools/e2e/run.py --stor
 Issues and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). The goal is to stay small, calm and offline.
 
 [MIT License](LICENSE) · [Privacy policy](PRIVACY.md) · [Changelog](CHANGELOG.md)
+
+---
+
+_Made with laziness and, of course, Claude!_
