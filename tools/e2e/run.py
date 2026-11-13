@@ -279,8 +279,9 @@ def run(cdp):
             text, src = p["entry"]["text"], p["entry"].get("url", "")
             # The test docs deliberately contain <img onerror=...>. Newer Chrome
             # logs that the extension's CSP blocked it while the sanitizer
-            # parsed it: that's the defence working, not an error.
-            if "inline event handler" in text and src.endswith("/lib/purify.es.mjs"):
+            # parsed it (DOMPurify, or the copy inside Mermaid for diagram
+            # labels): that's the defence working, not an error.
+            if "inline event handler" in text and "/lib/" in src and src.endswith((".mjs", ".js")):
                 continue
             problems.append("log: " + text[:300] + " " + src)
     ok = not problems
