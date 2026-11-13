@@ -175,10 +175,19 @@ def run(cdp):
         (SHOTS / name).write_bytes(base64.b64decode(data))
 
     def stage(sid, name):
-        for _ in range(100):
+        for _ in range(150):
             if evaluate(sid, "document.readyState === 'complete' && !!window.docshelf"):
                 break
             time.sleep(0.1)
+        else:
+            info = evaluate(sid, "JSON.stringify({url: location.href, title: document.title, text: (document.body?.innerText || '').slice(0, 300)})")
+            print(f"page did not load DocShelf: {info}")
+            for t in cdp.send("Target.getTargets")["targetInfos"]:
+                print(f"   target {t['type']}: {t['url'][:100]}")
+            for e in cdp.events:
+                if e.get("method") in ("Log.entryAdded", "Runtime.exceptionThrown"):
+                    print("   event", json.dumps(e.get("params"))[:300])
+            sys.exit(1)
         evaluate(sid, TEST_JS)
         out = evaluate(sid, f"window.__e2e.{name}()", timeout=90)
         for r in out["results"]:
