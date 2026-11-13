@@ -524,7 +524,7 @@ End.
       check('following a link replaces the preview', tabs().length === 1 && tabs()[0].name === 'api.md', JSON.stringify(tabs()));
       key('ArrowLeft', { key: 'ArrowLeft', altKey: true });
       await waitFor(() => tabs().find((t) => t.active)?.name === 'arch.md' && activeView()?.querySelector('.markdown-body h1'));
-      await sleep(100);
+      await waitFor(() => Math.abs(activeView().scrollTop - 1500) < 5, 5000); // restored once the doc has loaded
       check('Alt+Left goes back to the previous document', tabs().find((t) => t.active)?.name === 'arch.md', JSON.stringify(tabs()));
       check('...at the same scroll position', Math.abs(activeView().scrollTop - 1500) < 5, activeView().scrollTop);
       key('ArrowRight', { key: 'ArrowRight', altKey: true });
