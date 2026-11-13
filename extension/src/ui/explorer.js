@@ -179,7 +179,7 @@ export class Explorer {
     const path = row.dataset.path;
     this.#setFocus(path);
     if (row.classList.contains('dir')) this.toggle(path);
-    else this.onOpen(path, { pin: e.ctrlKey || e.metaKey });
+    else this.onOpen(path, { pin: e.ctrlKey || e.metaKey, side: e.altKey });
   }
 
   #onKey(e) {

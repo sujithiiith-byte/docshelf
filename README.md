@@ -41,7 +41,8 @@ Works in Chrome, Edge and other Chromium browsers (116+). In Brave, first enable
 | Ctrl+Shift+F | Search inside all Markdown and text files |
 | Alt+W · Alt+[ · Alt+] | Close tab · previous · next |
 | Right-click | Tab actions (close others, copy path…) and file actions |
-| / · Ctrl+B · Ctrl+O | Filter by name · hide sidebar · open another folder |
+| Ctrl+\\ · Alt+click a file | Open to the side (split view) |
+| / · Ctrl+B · Ctrl+O | Filter by name · hide/show explorer (also the top-left button) · open another folder |
 
 **Markdown:** tables, task lists, highlighted code with Copy buttons, an "On this page" outline, front matter, images from your folder, and links between docs (`api.md#endpoints` opens in a tab). The **Source** button shows the raw text and **Print** saves as PDF.
 **PDF:** Chrome's built-in viewer (pages, zoom, search, print). **Text:** monospace or a readable **Prose** font.
@@ -64,10 +65,10 @@ extension/               the extension (load this folder)
     fs/                  types.js (which files count), scanner.js, folderAccess.js
     state/               tabs.js (preview/pinned rules), filters.js
     search/              searchEngine.js (full-text, cached by modification time)
-    ui/                  explorer, tabbar, viewerHost, searchPanel, quickOpen, contextMenu, welcome
+    ui/                  explorer, editorGroup (split view), tabbar, viewerHost, searchPanel, quickOpen, contextMenu, welcome
     viewers/             registry.js (lazy loading), markdown.js, pdf.js, text.js, highlight.js
 tools/
-  e2e/run.py             headless end-to-end tests (73 checks)
+  e2e/run.py             headless end-to-end tests (84 checks)
   package.sh             builds the release zip (also done by the release workflow)
   make-icons.mjs         regenerates the icons
 docs/screenshots/        README screenshots (regenerate: tools/e2e/run.py --store)

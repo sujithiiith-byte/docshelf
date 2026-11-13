@@ -17,6 +17,7 @@
 
 import { loadViewer } from '../viewers/registry.js';
 import { h } from '../util.js';
+import { ICONS } from './icons.js';
 
 const MAX_LIVE = 4;
 const POLL_MS = 1500;
@@ -26,9 +27,13 @@ export class ViewerHost {
   #activeId = null;
   #noteTimer;
 
-  constructor({ viewsEl, barEl, workspace }) {
+  #timer;
+  #onVisible = () => this.#checkForChanges();
+
+  constructor({ viewsEl, barEl, workspace, onSplit }) {
     this.viewsEl = viewsEl;
     this.ws = workspace;
+    this.onSplit = onSplit;
     this.crumbs = h('div', { class: 'crumbs', title: 'Show in explorer' });
     this.note = h('span', { class: 'bar-note' });
     this.actions = h('div', { class: 'bar-actions' });
@@ -37,8 +42,15 @@ export class ViewerHost {
       const v = this.#views.get(this.#activeId);
       if (v) this.ws.reveal(v.tab.path);
     });
-    setInterval(() => this.#checkForChanges(), POLL_MS);
-    document.addEventListener('visibilitychange', () => this.#checkForChanges());
+    this.#timer = setInterval(() => this.#checkForChanges(), POLL_MS);
+    document.addEventListener('visibilitychange', this.#onVisible);
+  }
+
+  /** Tear everything down (used when a split group closes). */
+  dispose() {
+    clearInterval(this.#timer);
+    document.removeEventListener('visibilitychange', this.#onVisible);
+    for (const v of [...this.#views.values()]) this.#destroy(v);
   }
 
   /** Bring the views in line with the tab list. Called on every tab change. */
@@ -171,7 +183,10 @@ export class ViewerHost {
     const print = v.inst && v.tab.type !== 'pdf'
       ? h('button', { class: 'tb-btn', text: 'Print', title: 'Print or save as PDF', onclick: () => window.print() })
       : null;
-    this.actions.replaceChildren(v.inst?.toolbar ?? '', print ?? '');
+    const split = this.onSplit
+      ? h('button', { class: 'icon-btn tb-icon', title: 'Open to the side (Ctrl+\\)', 'aria-label': 'Open to the side', html: ICONS.split, onclick: () => this.onSplit(v.tab) })
+      : null;
+    this.actions.replaceChildren(v.inst?.toolbar ?? '', print ?? '', split ?? '');
   }
 
   #flash(text) {

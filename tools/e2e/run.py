@@ -251,6 +251,10 @@ def run(cdp):
     results += stage(s1, "firstTabUnchanged")
     cdp.send("Target.closeTarget", {"targetId": t2})
 
+    results += stage(s1, "splitStage")
+    shot(s1, "13-split.png")
+    results += stage(s1, "splitClose")
+
     size(s1, 760, 800)
     time.sleep(0.4)
     shot(s1, "06-narrow.png")

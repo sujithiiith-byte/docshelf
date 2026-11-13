@@ -10,8 +10,13 @@
 </head>
 <body>
   <div id="app" class="app no-root">
+    <nav class="rail" aria-label="Explorer (hidden)">
+      <button class="icon-btn" id="btnShowSidebar" title="Show explorer (Ctrl+B)" aria-label="Show explorer"></button>
+      <button class="icon-btn" id="btnRailSearch" title="Search in documents (Ctrl+Shift+F)" aria-label="Search in documents"></button>
+    </nav>
     <aside class="sidebar" aria-label="Explorer">
       <header class="side-head">
+        <button class="icon-btn" id="btnHideSidebar" title="Hide explorer (Ctrl+B)" aria-label="Hide explorer"></button>
         <div class="root-name" id="rootName">No folder open</div>
         <div class="side-actions">
           <button class="icon-btn" id="btnSearch" title="Search in documents (Ctrl+Shift+F)" aria-label="Search in documents" aria-pressed="false"></button>
@@ -33,9 +38,7 @@
     </aside>
     <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" title="Drag to resize · double-click to reset · Ctrl+B to hide"></div>
     <main class="main">
-      <div class="tabbar" id="tabbar" role="tablist" aria-label="Open documents"></div>
-      <div class="pathbar" id="pathbar"></div>
-      <div class="views" id="views"></div>
+      <div class="groups" id="groups"></div>
       <div class="welcome" id="welcome"></div>
     </main>
   </div>

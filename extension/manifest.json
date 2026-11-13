@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DocShelf",
   "short_name": "DocShelf",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Read local Markdown, PDF and text docs in tabs. Offline, private, lightweight.",
   "minimum_chrome_version": "116",
   "action": {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+- Split view: open a document to the side with Ctrl+\\, Alt+click in the explorer, the split button in the path bar, or right-click → "Open to the side". Drag the divider to resize; closing the last tab on one side removes the split. The layout is remembered per folder.
+- Explorer hide/show button (top-left). When hidden, a slim rail keeps the show and search buttons in reach.
+- The tab strip no longer shows a scrollbar over the titles.
+
 ## 0.2.0
 - Each browser tab can show a different folder. Clicking the icon opens a new workspace; reloads and session restore bring back each tab's folder.
 - Ctrl+P: go to a document by name (fuzzy).

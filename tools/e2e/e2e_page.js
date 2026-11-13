@@ -412,6 +412,53 @@ End.
       return { results };
     },
 
+    async splitStage() {
+      const { results, check } = suite();
+      // Explorer hide/show buttons
+      click($('#btnHideSidebar'));
+      check('hide button collapses the explorer to a slim rail', $('#app').classList.contains('sidebar-hidden') && $('#btnShowSidebar').offsetParent !== null);
+      click($('#btnShowSidebar'));
+      check('rail button brings the explorer back', !$('#app').classList.contains('sidebar-hidden') && $('#tree').offsetParent !== null);
+
+      // Split view
+      const archTab = $$('.tab').find((t) => t.textContent.includes('arch.md'));
+      click(archTab);
+      await waitFor(() => activeView()?.querySelector('.markdown-body h1'));
+      key('Backslash', { ctrlKey: true });
+      await waitFor(() => $$('.group').length === 2 && $$('.group')[1].querySelector('.markdown-body h1'), 4000);
+      const [left, right] = $$('.group');
+      check('Ctrl+\\ splits the view into two groups', $$('.group').length === 2 && $('.groups').classList.contains('split'));
+      check('the doc opens on the right and that side is active', right?.classList.contains('active-group') && right.querySelector('.tab.active .title')?.textContent === 'arch.md');
+      check('the left side keeps its tabs', left.querySelectorAll('.tab').length >= 1);
+      check('split button shown in the path bar', !!right.querySelector('.bar-actions .tb-icon'));
+
+      // Alt+click in the explorer opens on the other side (left, since right is active)
+      window.docshelf.explorer.reveal('README.md');
+      click(row('README.md'), { altKey: true });
+      await waitFor(() => left.querySelector('.tab.active .title')?.textContent === 'README.md');
+      check('Alt+click opens a file on the other side', left.querySelector('.tab.active .title')?.textContent === 'README.md' && left.classList.contains('active-group'));
+
+      // Clicking in a group makes it active; new docs open there
+      mouse(right.querySelector('.views'), 'pointerdown');
+      click(row('docs/notes.txt'));
+      await waitFor(() => right.querySelector('.tab.active .title')?.textContent === 'notes.txt');
+      check('docs open in the group you last clicked', right.querySelector('.tab.active .title')?.textContent === 'notes.txt');
+      await sleep(400);
+      const saved = Object.keys(localStorage).filter((k) => k.startsWith('docshelf:ws:')).map((k) => JSON.parse(localStorage.getItem(k))).find((w) => w.split);
+      check('split layout is saved with the folder', saved?.split?.tabs?.length >= 2, JSON.stringify(saved?.split));
+      return { results };
+    },
+
+    async splitClose() {
+      const { results, check } = suite();
+      const right = $$('.group')[1];
+      for (let i = 0; i < 20 && right.isConnected && right.querySelector('.tab .close'); i++) click(right.querySelector('.tab .close'));
+      await sleep(100);
+      check('closing the last tab on one side removes the split', $$('.group').length === 1 && !$('.groups').classList.contains('split') && !$('.group-resizer'));
+      check('the remaining side is active', $('.group').classList.contains('active-group'));
+      return { results };
+    },
+
     async beforeReload() {
       const { results } = suite();
       window.__tabsBefore = JSON.stringify(tabs().map((t) => t.name));
