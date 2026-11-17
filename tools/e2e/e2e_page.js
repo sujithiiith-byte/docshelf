@@ -467,6 +467,10 @@ End.
         '> [!WARNING]', '> Second alert.', '',
         '> Plain quote.', '',
         'A claim that needs a source[^1] and another[^note].', '',
+        'Inline $a_1 + b_1 = c^2$ and $`x_2`$ and \\(y_3\\) with *real emphasis*; prices $5 and $10 stay text.', '',
+        '$$', '\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}', '$$', '',
+        '```math', 'E = mc^2', '```', '',
+        'Broken: $\\frac{1}{$ here.', '',
         '![diagram](../../img/diagram.svg) ![build status](https://example.com/badge.svg)', '',
         '```mermaid', 'flowchart LR', '  A["Client <img src=x onerror=window.__mxss=1>"] --> B[Gateway] --> C[Doc service]', '```', '',
         '```mermaid', 'sequenceDiagram', '  Alice->>Bob: Hello', '  Bob-->>Alice: Hi', '```', '',
@@ -488,6 +492,15 @@ End.
       const notes = $$('.view:not([hidden]) .footnotes li');
       check('footnotes are numbered and listed at the end', refs === '1,2' && notes.length === 2 && notes[1].querySelector('strong') && notes[0].querySelector('a.fn-back[href="#fnref-1"]'), `${refs} / ${notes.length}`);
 
+      const math = await waitFor(() => activeView().querySelectorAll('.math.rendered .katex').length >= 5 && activeView(), 10000);
+      const mathP = math && [...math.querySelectorAll('.markdown-body p')].find((x) => x.textContent.includes('prices'));
+      check('math renders with KaTeX ($, $`…`$, \\(…\\), $$, ```math)', math && math.querySelectorAll('.math.rendered .katex').length >= 5, activeView().querySelectorAll('.math').length);
+      check('underscores inside math are not turned into italics', mathP && !mathP.querySelector('.math em') && mathP.querySelector(':scope > em')?.textContent === 'real emphasis', mathP?.innerHTML.slice(0, 300));
+      check('dollar amounts stay plain text', mathP?.textContent.includes('prices $5 and $10 stay text'), mathP?.textContent);
+      check('matrix row breaks (\\\\) survive', [...activeView().querySelectorAll('.math-display annotation')].some((n) => n.textContent.includes('b \\\\ c')));
+      check('bad TeX is shown as an error, not thrown', activeView().querySelector('.katex-error, .math-error'));
+      await document.fonts.ready;
+      check('KaTeX fonts load from the extension', [...document.fonts].some((f) => f.family.includes('KaTeX') && f.status === 'loaded'));
       const drawn = await waitFor(() => activeView().querySelectorAll('.mermaid-diagram svg').length === 2 && activeView().querySelector('.mmd-error'), 20000);
       check('mermaid diagrams render as SVG', drawn && activeView().querySelector('.mermaid-diagram svg').textContent.includes('Gateway'), activeView().querySelectorAll('.mermaid-block').length);
       check('a broken diagram shows its source and an error', activeView().querySelector('.mmd-error pre.mermaid-src') && activeView().querySelector('.mmd-error .mmd-msg')?.textContent.startsWith("This diagram couldn't"));
@@ -534,6 +547,55 @@ End.
       await waitFor(() => tabs().find((t) => t.active)?.name === 'arch.md');
       check('the mouse back button goes back too', tabs().find((t) => t.active)?.name === 'arch.md', JSON.stringify(tabs()));
       check('...without leaving DocShelf', location.pathname.endsWith('/workspace.html'));
+      return { results };
+    },
+
+    async dragStage() {
+      const { results, check } = suite();
+      const dnd = (src, target, x, y) => {
+        const dt = new DataTransfer();
+        const fire = (el, type) => el.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: dt, clientX: x, clientY: y }));
+        fire(src, 'dragstart');
+        fire(target, 'dragover');
+        const marked = !!$('.drop-before, .drop-after, .drop-into, .drop-split');
+        fire(target, 'drop');
+        if (src.isConnected) fire(src, 'dragend');
+        return marked;
+      };
+      const tabEl = (name) => $$('.tab').find((t) => t.querySelector('.title').textContent === name);
+      const names = (g) => [...g.querySelectorAll('.tab .title')].map((t) => t.textContent).join(',');
+      for (const t of [...window.docshelf.tabs.tabs]) window.docshelf.tabs.close(t.id);
+      for (const p of ['README.md', 'docs/notes.txt', 'docs/design/api.md']) window.docshelf.tabs.open(p, { pin: true });
+      await waitFor(() => activeView()?.querySelector('.markdown-body h1'));
+      check('tabs are draggable', $$('.tab').every((t) => t.draggable));
+
+      let r = tabEl('README.md').getBoundingClientRect();
+      const shown = dnd(tabEl('api.md'), tabEl('README.md'), r.left + 4, r.top + 10);
+      check('dragging a tab shows where it will go', shown);
+      check('drop before another tab reorders', names($('.group')) === 'api.md,README.md,notes.txt', names($('.group')));
+      check('the moved tab is active', $('.tab.active .title')?.textContent === 'api.md');
+      check('drag state is cleared after the drop', !document.body.classList.contains('tab-dragging') && !$('.tab.dragging'));
+
+      const views = $('.group .views');
+      r = views.getBoundingClientRect();
+      dnd(tabEl('notes.txt'), views, r.right - 40, r.top + r.height / 2);
+      await waitFor(() => $$('.group').length === 2);
+      const [left, right] = $$('.group');
+      check('dropping on the right half opens a split', $$('.group').length === 2 && names(left) === 'api.md,README.md' && names(right) === 'notes.txt', `${names(left)} | ${right ? names(right) : '-'}`);
+
+      r = right.querySelector('.tab').getBoundingClientRect();
+      dnd(tabEl('README.md'), right.querySelector('.tab'), r.right - 4, r.top + 10);
+      check('a tab dragged onto the other side moves there', names(left) === 'api.md' && names(right) === 'notes.txt,README.md', `${names(left)} | ${names(right)}`);
+      check('that side becomes active', right.classList.contains('active-group'));
+
+      const rv = right.querySelector('.views');
+      r = rv.getBoundingClientRect();
+      dnd(tabEl('api.md'), rv, r.left + 30, r.top + 100);
+      await sleep(50);
+      check('moving the last tab off a side closes that side', $$('.group').length === 1 && names($('.group')) === 'notes.txt,README.md,api.md', names($('.group')));
+      await sleep(400);
+      const saved = Object.keys(localStorage).filter((k) => k.startsWith('docshelf:ws:')).map((k) => JSON.parse(localStorage.getItem(k)));
+      check('the new tab order is saved', saved.some((w) => w.tabs?.tabs?.map((t) => t.path.split('/').pop()).join(',') === 'notes.txt,README.md,api.md'), JSON.stringify(saved.map((w) => w.tabs)));
       return { results };
     },
 

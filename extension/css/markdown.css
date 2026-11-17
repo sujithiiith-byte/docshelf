@@ -176,3 +176,11 @@
   color: var(--fg-faint);
   font-size: 0.8em;
 }
+
+/* Math (KaTeX). Before it is typeset, the TeX source shows quietly. */
+.markdown-body .math:not(.rendered) { color: var(--fg-muted); font: 0.9em var(--font-mono); white-space: pre-wrap; }
+.markdown-body div.math-display { margin: 0 0 1em; overflow-x: auto; overflow-y: hidden; }
+.markdown-body div.math-display:not(.rendered) { padding: 8px 0; text-align: center; }
+.markdown-body span.math-display { display: block; overflow-x: auto; overflow-y: hidden; }
+.markdown-body .katex-display { margin: 0.4em 0; }
+.markdown-body .math-error { color: var(--t-pdf); }

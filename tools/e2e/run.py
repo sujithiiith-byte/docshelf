@@ -257,6 +257,7 @@ def run(cdp):
     results += stage(s1, "richStage")
     shot(s1, "14-diagrams.png")
     results += stage(s1, "navStage")
+    results += stage(s1, "dragStage")
 
     size(s1, 760, 800)
     time.sleep(0.4)

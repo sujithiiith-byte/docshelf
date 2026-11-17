@@ -1,5 +1,5 @@
 // The tab strip. Pure view of TabStore: click = switch, double-click = keep open,
-// middle-click or × = close, mouse wheel scrolls horizontally.
+// middle-click or × = close, mouse wheel scrolls horizontally. Dragging: see tabDrag.js.
 
 import { h, dirname } from '../util.js';
 import { ICONS } from './icons.js';
@@ -50,6 +50,7 @@ export class TabBar {
           role: 'tab',
           'aria-selected': String(active),
           'data-id': t.id,
+          draggable: 'true',
           title: t.pinned ? t.path : `${t.path}\nPreview: double-click to keep it open`,
         },
         h('span', { class: 'ficon' }),

@@ -406,6 +406,24 @@ kbd {
 .tb-btn[aria-pressed="true"] { background: var(--selected); border-color: transparent; color: var(--fg); }
 
 .views { position: relative; flex: 1; min-height: 0; }
+
+/* Dragging tabs (see tabDrag.js) */
+.tab.dragging { opacity: 0.45; }
+.tab.drop-before { box-shadow: inset 2px 0 0 var(--accent); }
+.tab.drop-after { box-shadow: inset -2px 0 0 var(--accent); }
+.tabbar:has(.drop-before, .drop-after) { background: color-mix(in srgb, var(--accent) 6%, var(--bg-tab)); }
+.group.drop-into .views::after,
+.views.drop-split::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border: 2px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--selected);
+  pointer-events: none;
+}
+.views.drop-split::after { left: 50%; }
+body.tab-dragging .views iframe { pointer-events: none; }
 .view { position: absolute; inset: 0; overflow: auto; }
 .view-msg { display: grid; gap: 10px; justify-items: start; padding: 32px; color: var(--fg-muted); }
 .view-msg.loading { animation: fade-in 0.2s 0.25s both; }

@@ -8,6 +8,7 @@ import { pickFolder, listRecent, remember, forget, ensureReadPermission } from '
 import { Filters } from './state/filters.js';
 import { Explorer } from './ui/explorer.js';
 import { EditorGroup } from './ui/editorGroup.js';
+import { initTabDrag } from './ui/tabDrag.js';
 import { SearchPanel } from './ui/searchPanel.js';
 import { QuickOpen } from './ui/quickOpen.js';
 import { showMenu, closeMenu } from './ui/contextMenu.js';
@@ -135,6 +136,24 @@ function sideGroup() {
   if (groups.length < 2) createGroup();
   return groups.find((g) => g !== activeGroup);
 }
+
+/** Move a tab to another group (dragged there), keeping its scroll position. */
+function moveTab(from, id, to, index) {
+  const tab = from.tabs.get(id);
+  if (!tab) return;
+  const viewState = from.host.viewState(id);
+  const moved = to.tabs.insert(tab.path, index);
+  to.host.presetState(moved.id, viewState);
+  setActiveGroup(to);
+  from.tabs.close(id); // closing its last tab removes that side
+}
+
+initTabDrag(els.groups, {
+  getGroups: () => groups,
+  reorder: (g, id, index) => g.tabs.move(id, index),
+  moveTo: moveTab,
+  moveToNewGroup: (from, id) => moveTab(from, id, createGroup(), 0),
+});
 
 function setActiveGroup(g) {
   if (activeGroup === g) return;

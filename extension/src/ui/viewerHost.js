@@ -95,6 +95,21 @@ export class ViewerHost {
     this.#evict();
   }
 
+  /** A tab's current view state (scroll position…), e.g. to carry it to the other side. */
+  viewState(tabId) {
+    const v = this.#views.get(tabId);
+    if (!v) return null;
+    return v.inst ? v.inst.getViewState?.() ?? null : v.state;
+  }
+
+  /** Start a tab's view at `state` (applied now, or once it has loaded). */
+  presetState(tabId, state) {
+    const v = this.#views.get(tabId);
+    if (!v || !state) return;
+    if (v.inst) v.inst.setViewState(state);
+    else v.state = state;
+  }
+
   /** Jump to #fragment in a tab's document (now, or once it has loaded). */
   revealFragment(tabId, fragment) {
     const v = this.#views.get(tabId);

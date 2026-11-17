@@ -9,6 +9,7 @@ import { h, dirname, basename, resolvePath, safeDecode, escapeHtml, store, toast
 import { typeOf } from '../fs/types.js';
 import { highlightText, scrollRangeIntoView } from './highlight.js';
 import { renderMermaid, isDarkTheme } from './mermaid.js';
+import { renderMath } from './math.js';
 import { openLightbox } from '../ui/lightbox.js';
 
 const ID_PREFIX = 'sec-'; // keeps heading ids from clashing with page/DOM names
@@ -57,6 +58,37 @@ marked.use({
     },
   },
   extensions: [
+    // Math is taken out before Markdown sees it, so _ * \\ inside formulas survive.
+    // The TeX stays as text in .math elements and KaTeX typesets it after rendering.
+    {
+      name: 'mathBlock',
+      level: 'block',
+      start: (src) => src.match(/^ {0,3}(?:\$\$|\\\[)/m)?.index,
+      tokenizer(src) {
+        const m = /^ {0,3}\$\$([\s\S]+?)\$\$[ \t]*(?:\n+|$)/.exec(src) ?? /^ {0,3}\\\[([\s\S]+?)\\\][ \t]*(?:\n+|$)/.exec(src);
+        return m ? { type: 'mathBlock', raw: m[0], text: m[1].trim() } : undefined;
+      },
+      renderer: ({ text }) => `<div class="math math-display">${escapeHtml(text)}</div>\n`,
+    },
+    {
+      name: 'mathInline',
+      level: 'inline',
+      start: (src) => { const i = src.search(/\$|\\\(/); return i < 0 ? undefined : i; },
+      tokenizer(src) {
+        const tok = (m, display) => ({ type: 'mathInline', raw: m[0], text: m[1], display });
+        let m = /^\$`([^`]+?)`\$/.exec(src); // GitHub's $`…`$
+        if (m) return tok(m, false);
+        m = /^\$\$((?:\\[\s\S]|[^\\$])+?)\$\$/.exec(src);
+        if (m) return tok(m, true);
+        m = /^\\\(((?:\\[\s\S]|[^\\])+?)\\\)/.exec(src);
+        if (m) return tok(m, false);
+        // $…$: not "$ x$", not "$x $", not followed by a digit (so "$5 and $10" stays text)
+        m = /^\$(?![\s$])((?:\\[\s\S]|[^\\$\n]|\n(?!\n))+?)\$(?![0-9])/.exec(src);
+        if (m && !/\s$/.test(m[1])) return tok(m, false);
+        return undefined;
+      },
+      renderer: ({ text, display }) => `<span class="math ${display ? 'math-display' : 'math-inline'}">${escapeHtml(text)}</span>`,
+    },
     {
       name: 'footnoteDef',
       level: 'block',
@@ -103,6 +135,7 @@ marked.use({
     },
     code({ text, lang }) {
       const language = (lang || '').trim().split(/\s+/)[0].toLowerCase();
+      if (language === 'math') return `<div class="math math-display">${escapeHtml(text)}</div>\n`;
       if (language === 'mermaid') return `<pre class="mermaid-src"><code>${escapeHtml(text)}</code></pre>\n`;
       let body = escapeHtml(text);
       if (language && hljs.getLanguage(language)) {
@@ -373,7 +406,7 @@ function create(el, ctx) {
     }
     article.append(tpl.content);
     buildOutline();
-    await Promise.all([loadLocalImages(seq), renderDiagrams(seq)]);
+    await Promise.all([loadLocalImages(seq), renderDiagrams(seq), renderMath(article, () => seq === renderSeq && !disposed).catch(() => {})]);
   }
 
   // Highlight search matches and scroll to occurrence `index`.

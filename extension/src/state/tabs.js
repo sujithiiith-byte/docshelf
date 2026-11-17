@@ -80,6 +80,35 @@ export class TabStore extends Emitter {
     this.emit('change');
   }
 
+  /** Move tab `id` so it sits at position `index` (an insertion point among the current tabs). */
+  move(id, index) {
+    const from = this.tabs.findIndex((t) => t.id === id);
+    if (from < 0) return;
+    const to = Math.max(0, Math.min(this.tabs.length - 1, from < index ? index - 1 : index));
+    if (to !== from) {
+      const [tab] = this.tabs.splice(from, 1);
+      this.tabs.splice(to, 0, tab);
+    }
+    this.#setActive(id);
+    this.emit('change');
+  }
+
+  /** Add `path` at position `index` (used when a tab is dragged in from the other side). */
+  insert(path, index, { pin = true } = {}) {
+    const existing = this.tabs.find((t) => t.path === path);
+    if (existing) {
+      if (pin) existing.pinned = true;
+      this.move(existing.id, index);
+      return existing;
+    }
+    // Keep the "only one preview tab" rule.
+    const tab = makeTab(path, pin || this.tabs.some((t) => !t.pinned));
+    this.tabs.splice(Math.max(0, Math.min(this.tabs.length, index)), 0, tab);
+    this.#setActive(tab.id);
+    this.emit('change');
+    return tab;
+  }
+
   /** Close several tabs at once: 'others' | 'right' | 'all' relative to tab `id`. */
   closeMany(id, which) {
     const index = this.tabs.findIndex((t) => t.id === id);

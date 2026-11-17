@@ -43,10 +43,12 @@ Works in Chrome, Edge and other Chromium browsers (116+). In Brave, first enable
 | Alt+← · Alt+→ | Back · forward, after following links (mouse side buttons work too) |
 | Right-click | Tab actions (close others, copy path…) and file actions |
 | Ctrl+\\ · Alt+click a file | Open to the side (split view) |
+| Drag a tab | Rearrange tabs, move to the other side, or drop on the right half to split |
 | / · Ctrl+B · Ctrl+O | Filter by name · hide/show explorer (also the top-left button) · open another folder |
 
 **Markdown:** tables, task lists, highlighted code with Copy buttons, an "On this page" outline, front matter, images from your folder, and links between docs (`api.md#endpoints` opens in a tab). The **Source** button shows the raw text and **Print** saves as PDF.
 **Diagrams:** ```` ```mermaid ```` blocks (flowcharts, sequence, class, state, ER, Gantt…) are drawn as pictures, in light or dark. Click a diagram or image to see it full-window, then scroll to zoom and drag to move.
+**Math:** `$…$`, `$$…$$`, `\(…\)`, `\[…\]` and ```` ```math ```` blocks, typeset with KaTeX.
 **GitHub extras:** `> [!NOTE]` / `[!TIP]` / `[!IMPORTANT]` / `[!WARNING]` / `[!CAUTION]` alerts and `[^1]` footnotes.
 **Web images** (`https://…`) are not loaded, so reading a doc never contacts anyone. Their alt text is shown instead.
 **PDF:** Chrome's built-in viewer (pages, zoom, search, print). **Text:** monospace or a readable **Prose** font.
@@ -63,16 +65,16 @@ extension/               the extension (load this folder)
   manifest.json          MV3; only permission: activeTab
   background.js          icon click → new workspace tab (reuses an empty New Tab)
   workspace.html, css/
-  lib/                   bundled marked, DOMPurify, highlight.js, mermaid (see lib/README.md)
+  lib/                   bundled marked, DOMPurify, highlight.js, mermaid, KaTeX (see lib/README.md)
   src/
     main.js              wiring; folder id lives in the tab URL (?f=…)
     fs/                  types.js (which files count), scanner.js, folderAccess.js
     state/               tabs.js (preview/pinned rules), filters.js
     search/              searchEngine.js (full-text, cached by modification time)
-    ui/                  explorer, editorGroup (split view, back/forward), tabbar, viewerHost, searchPanel, quickOpen, contextMenu, lightbox, welcome
-    viewers/             registry.js (lazy loading), markdown.js, mermaid.js, pdf.js, text.js, highlight.js
+    ui/                  explorer, editorGroup (split view, back/forward), tabbar, tabDrag, viewerHost, searchPanel, quickOpen, contextMenu, lightbox, welcome
+    viewers/             registry.js (lazy loading), markdown.js, mermaid.js, math.js, pdf.js, text.js, highlight.js
 tools/
-  e2e/run.py             headless end-to-end tests (104 checks)
+  e2e/run.py             headless end-to-end tests (120 checks)
   package.sh             builds the release zip (also done by the release workflow)
   make-icons.mjs         regenerates the icons
 docs/screenshots/        README screenshots (regenerate: tools/e2e/run.py --store)
@@ -85,7 +87,7 @@ docs/screenshots/        README screenshots (regenerate: tools/e2e/run.py --stor
 
 - PDF text is not included in Ctrl+Shift+F search.
 - In the PDF viewer's title bar, and when downloading from it, the file shows up as a random ID instead of its name, because it is loaded from a local blob URL.
-- The download is about 1.7 MB, mostly the diagram library. It only loads when a document has a diagram.
+- The download is about 2 MB, mostly the diagram and math libraries. Each loads only when a document needs it.
 
 ## Contributing
 

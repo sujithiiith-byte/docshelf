@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+- Math in Markdown: `$…$`, `$$…$$`, `\(…\)`, `\[…\]` and ```` ```math ```` blocks, typeset with KaTeX (bundled, loaded only for documents with math). Before, underscores and `\\` inside formulas were mangled by the Markdown parser. Dollar amounts like "$5 and $10" stay plain text.
+- Drag tabs to rearrange them, drag a tab to the other side to move it there, or drop it on the right half of the document to open a split.
+
 ## 0.3.0
 - Split view: open a document to the side with Ctrl+\\, Alt+click in the explorer, the split button in the path bar, or right-click → "Open to the side". Drag the divider to resize; closing the last tab on one side removes the split. The layout is remembered per folder.
 - Explorer hide/show button (top-left). When hidden, a slim rail keeps the show and search buttons in reach.
